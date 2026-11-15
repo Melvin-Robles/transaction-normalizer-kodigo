@@ -1,0 +1,98 @@
+{
+  "schema_version": "1.0.0",
+  "policies": {
+    "unknown_source": "separate_as_invalid",
+    "invalid_record": "separate_as_invalid_and_continue",
+    "duplicate": "first_valid_occurrence_wins",
+    "duplicate_key": ["source", "id"],
+    "allow_extra_fields": true,
+    "allow_negative_amounts": false,
+    "allow_zero_amounts": false,
+    "allow_implicit_currency": false,
+    "exchange_rate_conversion": false,
+    "naive_datetime_timezone": "UTC",
+    "output_timezone": "UTC",
+    "max_amount": "1000000000.00",
+    "max_id_length": 128,
+    "max_file_bytes": 5242880,
+    "max_records": 10000
+  },
+  "currencies": {
+    "USD": {"decimal_places": 2},
+    "EUR": {"decimal_places": 2, "symbol": "€"}
+  },
+  "sources": {
+    "A": {
+      "discriminator": "id",
+      "required_fields": ["id", "amount", "currency", "timestamp", "status"],
+      "id_field": "id",
+      "id_type": "nonempty_string",
+      "amount_field": "amount",
+      "amount_style": "major_units_decimal_point",
+      "currency_field": "currency",
+      "currency_style": "three_letter_code",
+      "timestamp_field": "timestamp",
+      "date_formats": ["%Y-%m-%d %H:%M:%S"],
+      "timezone_required": false,
+      "status_field": "status",
+      "status_map": {
+        "completed": "SUCCESS",
+        "failed": "FAILED",
+        "pending": "PENDING"
+      }
+    },
+    "B": {
+      "discriminator": "transaction_id",
+      "required_fields": ["transaction_id", "total", "currency_code", "created_at", "state"],
+      "id_field": "transaction_id",
+      "id_type": "nonnegative_integer_or_digits_string",
+      "amount_field": "total",
+      "amount_style": "minor_units_integer",
+      "currency_field": "currency_code",
+      "currency_style": "three_letter_code",
+      "timestamp_field": "created_at",
+      "date_formats": ["%d/%m/%Y %H:%M"],
+      "timezone_required": false,
+      "status_field": "state",
+      "status_map": {
+        "ok": "SUCCESS",
+        "error": "FAILED",
+        "waiting": "PENDING"
+      }
+    },
+    "C": {
+      "discriminator": "ref",
+      "required_fields": ["ref", "amount", "date", "result"],
+      "id_field": "ref",
+      "id_type": "nonempty_string",
+      "amount_field": "amount",
+      "amount_style": "euro_symbol_decimal_comma",
+      "currency_field": null,
+      "currency_style": "symbol_eur_required",
+      "optional_currency_fields_to_cross_check": ["currency", "currency_code"],
+      "timestamp_field": "date",
+      "date_formats": ["ISO8601_WITH_TIMEZONE"],
+      "timezone_required": true,
+      "status_field": "result",
+      "status_map": {
+        "success": "SUCCESS",
+        "failure": "FAILED",
+        "processing": "PENDING"
+      }
+    }
+  },
+  "normalized_schema": {
+    "id": "string",
+    "amount": "decimal-money; JSON number on export",
+    "currency": "USD|EUR",
+    "timestamp": "ISO-8601 UTC, e.g. 2025-03-10T14:22:00Z",
+    "status": "SUCCESS|FAILED|PENDING",
+    "source": "A|B|C"
+  },
+  "metrics": {
+    "status_counts_only_valid": true,
+    "totals_by_currency_include_all_valid_statuses": true,
+    "successful_totals_by_currency_only_success": true,
+    "never_sum_different_currencies": true
+  }
+}

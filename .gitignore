@@ -1,0 +1,47 @@
+# Entornos virtuales
+.venv/
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Pruebas y cobertura
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Empaquetado e instalación editable
+*.egg-info/
+dist/
+build/
+*.egg
+pip-wheel-metadata/
+
+# Configuración local y secretos
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Archivos temporales y del sistema
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Salidas locales que no forman parte de las fixtures
+uploads/
+outputs/
+
+# Material de referencia del enunciado, no entregable
+Paquete_Proyecto_Normalizador_para_Codex/
+Paquete_Proyecto_Normalizador_para_Codex.zip
+
