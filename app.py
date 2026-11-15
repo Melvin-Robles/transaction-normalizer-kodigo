@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+import json
 from pathlib import Path
 from typing import Any
 
@@ -28,7 +29,7 @@ def main() -> None:
         page_title="Normalizador de transacciones",
         page_icon="↔",
         layout="wide",
-        initial_sidebar_state="expanded",
+        initial_sidebar_state="collapsed",
     )
     _show_header()
 
@@ -48,7 +49,7 @@ def main() -> None:
         result = normalize_records(records, rules)
     except DocumentError as exc:
         st.error(f"No se pudo procesar {label}: {exc}")
-        st.info("Puede seleccionar otro archivo desde el panel izquierdo sin reiniciar la aplicación.")
+        st.info("Puede seleccionar otro archivo desde el panel de datos sin reiniciar la aplicación.")
         return
     except Exception:
         st.error(f"No se pudo procesar {label} por un error interno controlado.")
@@ -56,10 +57,8 @@ def main() -> None:
 
     metrics = calculate_metrics(result.valid, result.invalid, total_processed=len(records))
     _show_batch_summary(metrics, label)
-    if label == "transacciones_ejemplo.json":
-        _show_integrated_examples(records)
-    filtered_valid = _show_valid_filters(result.valid)
-    _show_results(filtered_valid, result.invalid)
+    _show_input_preview(payload, label, records)
+    _show_results(result.valid, result.invalid)
 
 
 def _show_header() -> None:
@@ -81,39 +80,57 @@ def _show_header() -> None:
                 "Aplica filtros, revisa diagnósticos y descarga tu vista.",
             ],
         ):
-            column.markdown(f"**{number} · {title}**")
+            column.markdown(f"**{number} - {title}**")
             column.caption(description)
         st.caption("El procesamiento es local: los archivos cargados se mantienen en memoria y no se guardan en disco.")
 
 
 def _show_data_source() -> tuple[bytes | None, str]:
-    """Presenta el selector de entrada y devuelve bytes más etiqueta segura."""
+    """Presenta el selector de entrada en un panel compacto de la página."""
 
-    with st.sidebar:
-        st.header("1 · Elige los datos")
-        st.caption("Puedes empezar con el ejemplo integrado o cargar tu propio JSON.")
-        mode = st.radio(
-            "Fuente de datos",
-            ["Ejemplo integrado", "Cargar archivo JSON"],
-            captions=["Ideal para conocer la aplicación", "Procesamiento local en memoria"],
-            label_visibility="collapsed",
-        )
+    with st.container(border=True):
+        st.header("1 - Elige los datos")
+        st.caption("Comienza con el ejemplo integrado o carga tu propio JSON desde aquí.")
+        if "data_source_mode" not in st.session_state:
+            st.session_state["data_source_mode"] = "example"
+        mode = st.session_state["data_source_mode"]
+        example_col, upload_col = st.columns(2, gap="large")
+        with example_col:
+            if st.button(
+                "✨  Usar ejemplo integrado",
+                type="primary" if mode == "example" else "secondary",
+                use_container_width=True,
+                key="use_example_button",
+            ):
+                st.session_state["data_source_mode"] = "example"
+                st.rerun()
+            st.caption("Ideal para conocer la aplicación")
+        with upload_col:
+            if st.button(
+                "⬆️  Cargar mi JSON",
+                type="primary" if mode == "upload" else "secondary",
+                use_container_width=True,
+                key="use_upload_button",
+            ):
+                st.session_state["data_source_mode"] = "upload"
+                st.rerun()
+            st.caption("Procesamiento local en memoria")
         st.divider()
 
-        if mode == "Ejemplo integrado":
+        if mode == "example":
             try:
                 payload = DEFAULT_DATA_PATH.read_bytes()
             except OSError:
                 st.error("No se encontró el ejemplo integrado.")
                 return None, "datos de ejemplo"
-            st.success("Ejemplo listo")
-            st.caption("3 transacciones de las fuentes A, B y C.")
+            st.success("Ejemplo integrado listo")
             return payload, "transacciones_ejemplo.json"
 
         upload = st.file_uploader(
             "Selecciona un archivo JSON",
             type=["json"],
             accept_multiple_files=False,
+            key="json_upload",
             help="Máximo 5 MiB. El archivo se procesa en memoria y no se guarda en disco.",
         )
         if upload is None:
@@ -121,15 +138,15 @@ def _show_data_source() -> tuple[bytes | None, str]:
             return None, "archivo cargado"
         size_kb = upload.size / 1024 if upload.size is not None else 0
         st.success("Archivo listo para procesar")
-        st.caption(f"{upload.name} · {size_kb:.1f} KB")
+        st.caption(f"{upload.name} - {size_kb:.1f} KB")
         return upload.getvalue(), upload.name or "archivo cargado"
 
 
 def _show_batch_summary(metrics: dict[str, Any], label: str) -> None:
     """Muestra el resultado del procesamiento con jerarquía visual clara."""
 
-    st.subheader("2 · Resumen del lote")
-    st.caption(f"Fuente activa: **{label}** · {metrics['total_processed']} registro(s) leído(s)")
+    st.subheader("2 - Resumen del lote")
+    st.caption(f"Fuente activa: **{label}** - {metrics['total_processed']} registro(s) leído(s)")
     total = metrics["total_processed"]
     validity = (metrics["valid_count"] / total * 100) if total else 0
     cards = st.columns(4)
@@ -143,35 +160,46 @@ def _show_batch_summary(metrics: dict[str, Any], label: str) -> None:
     success = metrics["success_totals_by_currency"]
     currencies = sorted(set(totals) | set(success))
     if currencies:
-        st.caption("Importes por moneda · no se convierten ni se suman entre divisas")
+        st.caption("Importes por moneda - no se convierten ni se suman entre divisas")
         amount_cards = st.columns(max(1, min(3, len(currencies))))
         for card, currency in zip(amount_cards, currencies):
-            card.metric(f"{currency} · todos los válidos", f"{totals.get(currency, 0):.2f}")
+            card.metric(f"{currency} - todos los válidos", f"{totals.get(currency, 0):.2f}")
             card.caption(f"SUCCESS: {success.get(currency, 0):.2f}")
     else:
         st.info("El lote no contiene importes válidos para resumir.")
 
     statuses = metrics["status_counts"]
     if statuses:
-        st.caption("Estados encontrados: " + " · ".join(f"{key}: {value}" for key, value in statuses.items()))
+        st.caption("Estados encontrados: " + " - ".join(f"{key}: {value}" for key, value in statuses.items()))
 
 
-def _show_integrated_examples(records: list[Any]) -> None:
-    """Permite inspeccionar los tres registros JSON incluidos en el proyecto."""
+def _show_input_preview(payload: bytes, label: str, records: list[Any]) -> None:
+    """Permite inspeccionar el JSON integrado o el archivo cargado."""
 
-    with st.expander("Ver ejemplos integrados", expanded=True):
-        st.caption("Estos son los registros originales antes de la normalización. Cada tarjeta representa una fuente distinta.")
-        cards = st.columns(max(1, min(3, len(records))))
-        for index, (card, record) in enumerate(zip(cards, records), start=1):
-            source_name = _example_source_name(record)
-            with card:
-                st.markdown(f"**{source_name}**")
-                st.caption(f"Registro de ejemplo {index}")
-                st.json(record, expanded=False)
+    try:
+        document = json.loads(payload.decode("utf-8-sig"))
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return
+
+    if label == "transacciones_ejemplo.json":
+        with st.expander("Ver ejemplos integrados", expanded=True):
+            st.caption("Registros originales antes de la normalización.")
+            cards = st.columns(max(1, min(3, len(records))))
+            for index, (card, record) in enumerate(zip(cards, records), start=1):
+                source_name = _example_source_name(record)
+                with card:
+                    st.markdown(f"**{source_name}**")
+                    st.caption(f"Registro de ejemplo {index}")
+                    st.json(record, expanded=True)
+        return
+
+    with st.expander(f"Ver JSON cargado - {label}", expanded=False):
+        st.caption("Vista del contenido recibido antes de la normalización.")
+        st.json(document, expanded=True)
 
 
 def _example_source_name(record: Any) -> str:
-    """Identifica la fuente de una fixture de ejemplo sin mostrar reglas internas."""
+    """Identifica la fuente de una fixture integrada para rotular su tarjeta."""
 
     if isinstance(record, dict):
         if "id" in record:
@@ -184,23 +212,27 @@ def _example_source_name(record: Any) -> str:
 
 
 def _show_valid_filters(valid: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Filtra y ordena válidos dentro de un panel desplegable."""
+    """Filtra y ordena válidos dentro de la columna lateral de resultados."""
 
-    st.subheader("3 · Explora las transacciones")
-    with st.expander("Filtros y orden", expanded=True):
-        st.caption("Combina varios filtros para encontrar exactamente las filas que necesitas.")
+    with st.container(border=True):
+        st.subheader("Filtros")
+        st.caption("Ajusta la vista sin alejarte de la tabla.")
         states = ["Todos"] + sorted({row["status"] for row in valid})
         currencies = ["Todas"] + sorted({row["currency"] for row in valid})
         sources = ["Todas"] + sorted({row["source"] for row in valid})
-        col1, col2, col3 = st.columns(3)
-        state = col1.selectbox("Estado", states, help="Filtra por SUCCESS, FAILED o PENDING.")
-        currency = col2.selectbox("Moneda", currencies)
-        source = col3.selectbox("Fuente", sources, help="A, B o C según el formato de origen.")
-        query = st.text_input("Buscar por ID", placeholder="Ejemplo: tx_001 o 204", help="Acepta coincidencias parciales y no distingue mayúsculas.").strip().casefold()
-        date_col, sort_col, direction_col = st.columns([2, 1, 1])
-        dates = date_col.date_input("Rango de fechas UTC", value=(), format="YYYY-MM-DD")
-        sort_by = sort_col.selectbox("Ordenar por", ["Fecha", "Importe", "ID"])
-        descending = direction_col.checkbox("Más recientes / mayores primero")
+        state = st.selectbox("Estado", states, help="Filtra por SUCCESS, FAILED o PENDING.")
+        currency = st.selectbox("Moneda", currencies)
+        source = st.selectbox("Fuente", sources, help="A, B o C según el formato de origen.")
+        query = st.text_input(
+            "Buscar por ID",
+            placeholder="tx_001 o 204",
+            help="La tabla se filtra mientras escribes. Acepta coincidencias parciales y no distingue mayúsculas.",
+            type="search",
+            live=True,
+        ).strip().casefold()
+        dates = st.date_input("Rango de fechas UTC", value=(), format="YYYY-MM-DD")
+        sort_by = st.selectbox("Ordenar por", ["Fecha", "Importe", "ID"])
+        descending = st.checkbox("Más recientes / mayores primero")
 
     filtered: list[dict[str, Any]] = []
     for row in valid:
@@ -226,34 +258,38 @@ def _show_valid_filters(valid: list[dict[str, Any]]) -> list[dict[str, Any]]:
         "ID": lambda row: row["id"].casefold(),
     }[sort_by]
     filtered.sort(key=sort_key, reverse=descending)
-    st.caption(f"Mostrando **{len(filtered)}** de **{len(valid)}** transacción(es) válidas")
     return filtered
 
 
-def _show_results(filtered: list[dict[str, Any]], invalid: list[dict[str, Any]]) -> None:
-    """Presenta únicamente las dos vistas operativas del resultado."""
+def _show_results(valid: list[dict[str, Any]], invalid: list[dict[str, Any]]) -> None:
+    """Presenta las dos vistas operativas del resultado."""
 
+    st.subheader("3 - Explora las transacciones")
     valid_tab, invalid_tab = st.tabs([
-        f"Transacciones válidas · {len(filtered)}",
-        f"Registros inválidos · {len(invalid)}",
+        "Transacciones válidas",
+        f"Registros inválidos - {len(invalid)}",
     ])
     with valid_tab:
-        st.caption("Vista normalizada. El importe se muestra con su moneda para facilitar la lectura.")
-        st.dataframe(
-            [_display_valid_row(row) for row in filtered],
-            use_container_width=True,
-            hide_index=True,
-            height=400,
-        )
-        st.download_button(
-            "Descargar resultados visibles",
-            serialize_normalized_json(filtered),
-            "transacciones_filtradas.json",
-            "application/json",
-            use_container_width=True,
-        )
-        if not filtered:
-            st.info("No hay transacciones que coincidan con los filtros actuales. Prueba a quitar algún filtro.")
+        table_column, filter_column = st.columns([3.2, 1.15], gap="large")
+        with filter_column:
+            filtered = _show_valid_filters(valid)
+        with table_column:
+            st.caption(f"Vista normalizada - mostrando {len(filtered)} de {len(valid)} transacción(es)")
+            st.dataframe(
+                [_display_valid_row(row) for row in filtered],
+                use_container_width=True,
+                hide_index=True,
+                height=520,
+            )
+            st.download_button(
+                "Descargar resultados visibles",
+                serialize_normalized_json(filtered),
+                "transacciones_filtradas.json",
+                "application/json",
+                use_container_width=True,
+            )
+            if not filtered:
+                st.info("No hay transacciones que coincidan con los filtros actuales. Prueba a quitar algún filtro.")
 
     with invalid_tab:
         if not invalid:
@@ -262,7 +298,7 @@ def _show_results(filtered: list[dict[str, Any]], invalid: list[dict[str, Any]])
         codes = ["Todos"] + sorted({row["error_code"] for row in invalid})
         selected_code = st.selectbox("Filtrar diagnósticos por código", codes, key="invalid_code")
         shown_errors = [row for row in invalid if selected_code == "Todos" or row["error_code"] == selected_code]
-        st.caption(f"Mostrando **{len(shown_errors)}** de **{len(invalid)}** diagnóstico(s)")
+        st.caption(f"Mostrando {len(shown_errors)} de {len(invalid)} diagnóstico(s)")
         st.dataframe(
             [_display_error_row(row) for row in shown_errors],
             use_container_width=True,
@@ -289,7 +325,7 @@ def _display_error_row(row: dict[str, Any]) -> dict[str, Any]:
 
     return {
         "fila": row["index"] + 1,
-        "fuente": row["source"] or "—",
+        "fuente": row["source"] or "-",
         "código": row["error_code"],
         "motivo": row["message"],
     }
