@@ -1,0 +1,17 @@
+{
+  "transactions": [
+    {
+      "id": "envuelto-001",
+      "amount": "8.50",
+      "currency": "USD",
+      "timestamp": "2025-03-13 11:00:00",
+      "status": "pending"
+    },
+    {
+      "ref": "envuelto-002",
+      "amount": "€14,25",
+      "date": "2025-03-13T17:00:00Z",
+      "result": "success"
+    }
+  ]
+}

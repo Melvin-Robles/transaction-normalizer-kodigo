@@ -1,0 +1,42 @@
+[
+  {
+    "id": "orden-001",
+    "amount": "145.75",
+    "currency": "USD",
+    "timestamp": "2025-03-11 09:15:00",
+    "status": "completed"
+  },
+  {
+    "id": "orden-002",
+    "amount": "12.00",
+    "currency": "EUR",
+    "timestamp": "2025-03-11 10:20:00",
+    "status": "failed"
+  },
+  {
+    "transaction_id": 3001,
+    "total": 2599,
+    "currency_code": "EUR",
+    "created_at": "11/03/2025 16:30",
+    "state": "WAITING"
+  },
+  {
+    "transaction_id": "3002",
+    "total": 7500,
+    "currency_code": "USD",
+    "created_at": "11/03/2025 17:00",
+    "state": "ERROR"
+  },
+  {
+    "ref": "web-900",
+    "amount": "€89,90",
+    "date": "2025-03-11T18:00:00+02:00",
+    "result": "success"
+  },
+  {
+    "ref": "web-901",
+    "amount": "€5,50",
+    "date": "2025-03-11T16:05:00Z",
+    "result": "processing"
+  }
+]

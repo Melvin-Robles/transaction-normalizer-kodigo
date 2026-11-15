@@ -1,0 +1,53 @@
+[
+  {
+    "id": "mixto-ok",
+    "amount": "25.00",
+    "currency": "USD",
+    "timestamp": "2025-03-12 08:00:00",
+    "status": "completed"
+  },
+  {
+    "id": "sin-moneda",
+    "amount": "10.00",
+    "timestamp": "2025-03-12 08:05:00",
+    "status": "completed"
+  },
+  {
+    "transaction_id": 4001,
+    "total": 3499,
+    "currency_code": "usd",
+    "created_at": "12/03/2025 08:10",
+    "state": "OK"
+  },
+  {
+    "transaction_id": 4002,
+    "total": 34.99,
+    "currency_code": "USD",
+    "created_at": "12/03/2025 08:15",
+    "state": "OK"
+  },
+  {
+    "ref": "mixto-c",
+    "amount": "€19,90",
+    "date": "2025-03-12T08:20:00Z",
+    "result": "success"
+  },
+  {
+    "ref": "moneda-conflictiva",
+    "amount": "€19,90",
+    "currency": "USD",
+    "date": "2025-03-12T08:25:00Z",
+    "result": "success"
+  },
+  {
+    "id": "mixto-ok",
+    "amount": "25.00",
+    "currency": "USD",
+    "timestamp": "2025-03-12 08:00:00",
+    "status": "completed"
+  },
+  null,
+  {
+    "mensaje": "sin fuente"
+  }
+]

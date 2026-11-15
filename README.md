@@ -1,116 +1,79 @@
 # Normalizador de transacciones
 
-Aplicación local en Python 3.11+ y Streamlit para cargar JSON heterogéneo de las fuentes A, B y C, validar cada registro, normalizar los válidos y mostrar diagnósticos de los inválidos.
+Aplicación web local en Python y Streamlit para cargar JSON heterogéneo de las fuentes A, B y C, normalizar los registros válidos y mostrar diagnósticos comprensibles para los inválidos.
 
 ## Requisitos
 
-- Windows, macOS o Linux.
 - Python 3.11 o superior.
-- Acceso a Internet únicamente durante la instalación de dependencias.
-- No se necesita cuenta, base de datos ni servicio externo para usar la aplicación.
+- Windows, macOS o Linux.
+- Conexión a Internet únicamente durante la instalación inicial.
+- No se necesita base de datos, cuenta ni servicio externo.
 
-## Instalación desde cero
+## Instalación y arranque
 
-Abra PowerShell o una terminal y ejecute los comandos desde la carpeta raíz del repositorio, la que contiene `app.py`:
+Desde la carpeta raíz del proyecto, la que contiene `app.py`:
 
 ```powershell
-cd C:\Users\melvi\Documents\GitHub\transaction-normalizer-kodigo
-python --version
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
+python -m streamlit run app.py
 ```
 
-Si PowerShell impide activar el entorno virtual, ejecute una vez en esa misma ventana:
+Si PowerShell bloquea la activación del entorno virtual:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 .\.venv\Scripts\Activate.ps1
 ```
 
-En otra plataforma, active el entorno con `source .venv/bin/activate` y use los mismos comandos de instalación.
+Streamlit mostrará una dirección local, normalmente `http://localhost:8501`. El docente solo necesita abrir esa dirección en el navegador y utilizar la interfaz. Para detener el servidor, presione `Ctrl+C` en la terminal que lo inició.
 
-## Ejecutar las pruebas
+## Recorrido recomendado en la interfaz
 
-Con el entorno virtual activo:
+1. En el panel izquierdo, seleccione **Ejemplo integrado** para ver un lote preparado con las fuentes A, B y C.
+2. Revise el resumen del lote: procesadas, válidas, inválidas, calidad e importes por moneda.
+3. Abra **Ver ejemplos integrados** para consultar los tres JSON originales antes de la normalización.
+4. Explore **Transacciones válidas** y use los filtros por estado, moneda, fuente, fecha o ID.
+5. Abra **Registros inválidos** para consultar los motivos de rechazo.
+6. Use los botones de descarga para obtener exactamente la vista que está observando.
+7. Para cargar información propia, seleccione **Cargar archivo JSON** y arrastre un archivo o pulse **Examinar**.
 
-```powershell
-python -m pytest -q
-```
+## Archivos de demostración para cargar manualmente
 
-La suite verifica las tres fuentes, importes y fechas, errores de lectura, límites, duplicados, filtros de validación, configuración modificada y exportaciones. El resultado verificado de esta entrega es **42 passed**.
+En `data/pruebas_ui/` se incluyen archivos que pueden cargarse desde el front:
 
-## Iniciar la aplicación
+- `transacciones_validas.json`: 6 registros válidos de las tres fuentes.
+- `transacciones_mixtas.json`: mezcla de registros válidos, inválidos, duplicados y sin fuente.
+- `transacciones_envueltas.json`: prueba el formato `{ "transactions": [...] }`.
+- `transacciones_vacias.json`: lote vacío.
+- `transacciones_malformadas.json`: JSON con sintaxis incorrecta para comprobar el mensaje de error.
 
-```powershell
-python -m streamlit run app.py
-```
+El archivo `data/transacciones_ejemplo.json` es el ejemplo integrado que la aplicación carga por defecto.
 
-Streamlit mostrará una dirección local, normalmente `http://localhost:8501`. Abra esa dirección en el navegador. Para detener el servidor, vuelva a la terminal y presione `Ctrl+C`.
+## Reglas principales
 
-## Guion de prueba para el docente
+- El esquema normalizado contiene exactamente `id`, `amount`, `currency`, `timestamp`, `status` y `source`.
+- Se admiten USD y EUR; no se convierten ni se mezclan importes entre monedas.
+- A usa unidades mayores, B usa unidades menores (céntimos) y C exige el símbolo `€` con coma decimal.
+- Las fechas se exportan en UTC.
+- Los duplicados se controlan por `(source, id)` y solo se conserva la primera aparición válida.
+- Los archivos cargados se procesan en memoria y no se guardan en disco.
+- Las reglas activas se mantienen en `config/rules.json`.
 
-1. Al abrir la aplicación, deje seleccionada **Datos de ejemplo**. Deben aparecer 3 transacciones válidas, 0 inválidas, USD 201.00 y EUR 99.99.
-2. Abra **Registros inválidos** y confirme que la tabla está vacía para el ejemplo.
-3. Seleccione **Cargar archivo JSON** y cargue `data/transacciones_casos_borde.json`. Deben procesarse 43 filas, con 13 válidas y 30 diagnósticos.
-4. En **Transacciones válidas**, pruebe filtros combinados de estado, moneda, fuente, fecha y búsqueda parcial de ID. El contador y la tabla deben cambiar.
-5. Use **Descargar vista filtrada** y compruebe que el JSON contiene exactamente las filas visibles, seis campos y `amount` como número.
-6. En **Registros inválidos**, filtre por código y descargue los diagnósticos. Deben incluir índice, fuente, código y motivo, sin volcar el registro original.
-7. En **Reglas activas**, revise los mapas de estado, formatos, monedas y límites leídos desde `config/rules.json`.
-8. Pruebe también `data/entrada_malformada.json`: debe aparecer un mensaje controlado y la pantalla debe seguir disponible para seleccionar otro archivo.
+## Arquitectura
 
-## Estructura
-
-- `app.py`: interfaz Streamlit; no contiene lógica de parsing monetario.
-- `src/transaction_normalizer/config.py`: carga y validación de reglas.
-- `src/transaction_normalizer/ingest.py`: límites y lectura JSON segura.
-- `src/transaction_normalizer/normalizer.py`: detección de fuente, validación y normalización con `Decimal`.
-- `src/transaction_normalizer/metrics.py`: conteos y sumas por moneda.
-- `src/transaction_normalizer/exports.py`: JSON de seis campos y diagnósticos.
-- `config/rules.json`: fuente de verdad de mapas, formatos, monedas y políticas.
-- `data/`: fixtures de demostración y casos adversariales.
-- `tests/`: suite pytest y expectativas de los casos adversariales.
-
-## Reglas principales adoptadas
-
-Para esta entrega se adoptan las siguientes decisiones de negocio:
-
-- El esquema contiene exactamente `id`, `amount`, `currency`, `timestamp`, `status` y `source`.
-- Se admiten USD y EUR; no se realizan conversiones ni se mezclan sumas entre divisas.
-- A usa unidades mayores, B usa unidades menores (céntimos) y C exige símbolo `€` con coma decimal.
-- Se rechazan cero, negativos, más de dos decimales, importes ambiguos y valores mayores que 1.000.000.000,00.
-- Los estados se mapean por fuente desde `config/rules.json`.
-- Las fechas sin zona de A/B se interpretan como UTC; los offsets de C se convierten a UTC.
-- Los registros incompletos o inconsistentes se separan como inválidos y el lote continúa.
-- Solo la primera ocurrencia válida de `(source, id)` se admite.
-- Se permiten campos extra no conflictivos y se rechazan discriminadores ambiguos o un `source` contradictorio.
-- Las sumas de todos los válidos y de los válidos `SUCCESS` se mantienen separadas por moneda.
-- Se aplican límites de 5 MiB, 10.000 registros e identificadores de máximo 128 caracteres.
-- La aplicación no persiste archivos subidos ni ejecuta contenido del JSON.
-
-El importe B se interpreta como unidades menores, C exige el símbolo `€`, las fechas se exportan en UTC y las divisas nunca se suman entre sí. Los mapas de estados y monedas se obtienen de `config/rules.json`.
-
-## Datos de prueba
-
-- `transacciones_ejemplo.json`: tres registros del enunciado, todos válidos.
-- `transacciones_casos_borde.json`: casos válidos, incompletos, ambiguos, duplicados y adversariales.
-- `entrada_malformada.json`: JSON con error de sintaxis intencional.
-- `raiz_invalida.json`: documento JSON con raíz no admitida.
-- `transacciones_vacias.json`: arreglo vacío.
-- `contenedor_transacciones.json`: objeto admitido con `transactions` como arreglo.
-
-El contenido de estos archivos es solamente información de prueba; nunca se ejecutan textos incluidos en los registros.
-
-## Nota técnica resumida
-
-La solución está separada en capas de configuración, ingestión, normalización, métricas, exportación e interfaz. Usa `Decimal` para importes, valida cada fila sin detener el lote, exporta JSON seguro y mantiene los uploads únicamente en memoria.
-
-Se utilizó Codex para apoyar la lectura del contrato, la implementación, las pruebas y la documentación. Las decisiones de negocio anteriores fueron adoptadas para esta entrega y están reflejadas en `config/rules.json`.
-
-Verificación realizada: `python -m pytest -q` terminó con **42 passed**; `python -m compileall -q src app.py` terminó correctamente. No hay autenticación, persistencia, servicios remotos ni pruebas automatizadas de navegador.
+- `app.py`: interfaz Streamlit y flujo de interacción.
+- `src/transaction_normalizer/config.py`: carga y validación de configuración.
+- `src/transaction_normalizer/ingest.py`: lectura segura y límites de entrada.
+- `src/transaction_normalizer/normalizer.py`: detección de fuente y normalización con `Decimal`.
+- `src/transaction_normalizer/metrics.py`: métricas y sumas separadas por moneda.
+- `src/transaction_normalizer/exports.py`: descargas JSON seguras.
+- `config/rules.json`: fuente de verdad de formatos, monedas, estados y límites.
+- `data/`: ejemplo integrado y archivos de demostración para la interfaz.
 
 ## Limitaciones conocidas
 
-La aplicación es local, no autentica usuarios, no persiste cargas, no usa servicios remotos y no incluye paginación ni pruebas automatizadas de navegador. El límite contractual de 10.000 registros mantiene el procesamiento en memoria acotado.
+La aplicación es local, no autentica usuarios, no persiste cargas, no usa servicios remotos y procesa los datos en memoria. El límite contractual es de 5 MiB por archivo y 10.000 registros.
 
