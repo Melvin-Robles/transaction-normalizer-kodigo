@@ -65,24 +65,7 @@ def _show_header() -> None:
     """Muestra una cabecera breve con orientación para la primera visita."""
 
     st.title("Normalizador de transacciones")
-    st.caption("Convierte JSON heterogéneo en datos consistentes, revisables y listos para descargar.")
-    with st.container(border=True):
-        st.subheader("Cómo empezar")
-        st.caption("Una guía rápida para orientarte en la pantalla")
-        steps = st.columns(3)
-        for column, number, title, description in zip(
-            steps,
-            ["01", "02", "03"],
-            ["Elige los datos", "Revisa el lote", "Explora y descarga"],
-            [
-                "Usa el ejemplo integrado o carga un archivo JSON.",
-                "Comprueba cuántas filas son válidas y la calidad del lote.",
-                "Aplica filtros, revisa diagnósticos y descarga tu vista.",
-            ],
-        ):
-            column.markdown(f"**{number} - {title}**")
-            column.caption(description)
-        st.caption("El procesamiento es local: los archivos cargados se mantienen en memoria y no se guardan en disco.")
+    st.caption("By Melvin Robles")
 
 
 def _show_data_source() -> tuple[bytes | None, str]:
@@ -97,7 +80,7 @@ def _show_data_source() -> tuple[bytes | None, str]:
         example_col, upload_col = st.columns(2, gap="large")
         with example_col:
             if st.button(
-                "✨  Usar ejemplo integrado",
+                "Usar ejemplo integrado",
                 type="primary" if mode == "example" else "secondary",
                 use_container_width=True,
                 key="use_example_button",
@@ -107,15 +90,15 @@ def _show_data_source() -> tuple[bytes | None, str]:
             st.caption("Ideal para conocer la aplicación")
         with upload_col:
             if st.button(
-                "⬆️  Cargar mi JSON",
+                "Cargar mi JSON",
                 type="primary" if mode == "upload" else "secondary",
                 use_container_width=True,
                 key="use_upload_button",
             ):
                 st.session_state["data_source_mode"] = "upload"
+                st.session_state["scroll_to_upload"] = True
                 st.rerun()
             st.caption("Procesamiento local en memoria")
-        st.divider()
 
         if mode == "example":
             try:
@@ -123,9 +106,9 @@ def _show_data_source() -> tuple[bytes | None, str]:
             except OSError:
                 st.error("No se encontró el ejemplo integrado.")
                 return None, "datos de ejemplo"
-            st.success("Ejemplo integrado listo")
             return payload, "transacciones_ejemplo.json"
 
+        _render_upload_anchor()
         upload = st.file_uploader(
             "Selecciona un archivo JSON",
             type=["json"],
@@ -133,6 +116,8 @@ def _show_data_source() -> tuple[bytes | None, str]:
             key="json_upload",
             help="Máximo 5 MiB. El archivo se procesa en memoria y no se guarda en disco.",
         )
+        if st.session_state.pop("scroll_to_upload", False):
+            _scroll_to_upload_anchor()
         if upload is None:
             st.info("Aún no hay archivo. Arrástralo aquí o pulsa Examinar.")
             return None, "archivo cargado"
@@ -140,6 +125,32 @@ def _show_data_source() -> tuple[bytes | None, str]:
         st.success("Archivo listo para procesar")
         st.caption(f"{upload.name} - {size_kb:.1f} KB")
         return upload.getvalue(), upload.name or "archivo cargado"
+
+
+def _render_upload_anchor() -> None:
+    """Crea un punto estable para llevar el foco visual al cargador."""
+
+    if hasattr(st, "html"):
+        st.html('<div id="json-upload-target"></div>')
+
+
+def _scroll_to_upload_anchor() -> None:
+    """Desplaza la página hacia el cargador usando código estático de la app."""
+
+    if hasattr(st, "html"):
+        st.html(
+            """
+            <script>
+              window.setTimeout(() => {
+                const target = document.getElementById("json-upload-target");
+                if (target) {
+                  target.scrollIntoView({ behavior: "smooth", block: "center" });
+                }
+              }, 120);
+            </script>
+            """,
+            unsafe_allow_javascript=True,
+        )
 
 
 def _show_batch_summary(metrics: dict[str, Any], label: str) -> None:

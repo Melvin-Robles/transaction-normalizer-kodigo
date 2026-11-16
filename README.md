@@ -73,7 +73,3 @@ El archivo `data/transacciones_ejemplo.json` es el ejemplo integrado que la apli
 - `config/rules.json`: fuente de verdad de formatos, monedas, estados y límites.
 - `data/`: ejemplo integrado y archivos de demostración para la interfaz.
 
-## Limitaciones conocidas
-
-La aplicación es local, no autentica usuarios, no persiste cargas, no usa servicios remotos y procesa los datos en memoria. El límite contractual es de 5 MiB por archivo y 10.000 registros.
-
