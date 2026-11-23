@@ -109,6 +109,30 @@ pero no equivale a observar que Codex haya activado automáticamente cada skill.
 La activación real depende del selector de skills del entorno y no se afirma
 como evidencia en esta fase.
 
+## Revisión consolidada en FASE 7
+
+Se volvieron a ejecutar los tres scripts desde la raíz del repositorio, sin
+modificar entradas ni configuración:
+
+```powershell
+python .agents/skills/transaction-auditor/scripts/audit_batch.py data/transacciones_ejemplo.json
+python .agents/skills/transaction-auditor/scripts/audit_batch.py data/pruebas_ui/transacciones_mixtas.json
+python .agents/skills/normalization-rules/scripts/validate_rules.py --rules config/rules.json
+python .agents/skills/regression-validator/scripts/run_regression.py --timeout 60
+```
+
+Resultados observados:
+
+- Ejemplo: 3/3/0, calidad 100%, USD 201.00 y EUR 99.99.
+- Mixto: 9/3/6, calidad 33.33%, seis códigos de diagnóstico, sin registros
+  originales completos en el reporte.
+- Reglas: `valid: true`, fuentes A/B/C compatibles con sus adaptadores,
+  monedas EUR/USD y políticas UTC/límites presentes.
+- Regresión: 36 pruebas, compilación y ejemplo integrado correctos.
+
+Esto prueba la ejecución manual de los scripts en esta revisión. No prueba que
+Codex haya activado automáticamente una skill por nombre en una conversación.
+
 El validador auxiliar de `skill-creator` se intentó ejecutar, pero el entorno no
 tenía instalado el módulo opcional `PyYAML`. Por eso se usó la validación local
 de frontmatter incluida en `tests/test_skills.py`; no se añadió PyYAML a las
@@ -118,8 +142,8 @@ dependencias del proyecto.
 
 - Las skills son locales al repositorio y no se han instalado como skills
   globales del usuario.
-- La FASE 5 añadió un agente Python de auditoría, pero no lo conecta todavía a
-  Streamlit ni activa un proveedor LLM por defecto.
+- La FASE 5 añadió un agente Python de auditoría y la FASE 6 lo expuso en
+  Streamlit; el proveedor LLM continúa deshabilitado por defecto.
 - La auditoría no determina causas empresariales; solo resume diagnósticos del
   normalizador.
 - La revisión de reglas no aplica recomendaciones automáticamente.

@@ -168,4 +168,21 @@ cliente Codex/CLI que descubra `.codex/agents/` y muestre el nombre del agente.
   entorno read-only técnico.
 - La activación automática depende del cliente Codex y de la configuración
   cargada al iniciar la sesión.
-- No se implementan proveedores LLM, chat de auditoría ni cambios visuales.
+- La evidencia de Codex no demuestra que un proveedor LLM haya generado una
+  respuesta real; esa ruta no se probó con credenciales ni red.
+
+## Relación con el runtime Python y Streamlit
+
+Los agentes de esta fase siguen siendo roles de revisión del entorno Codex.
+No son el `AuditAgent` que se ejecuta dentro de la aplicación. Desde la FASE 5,
+`AuditAgent` reutiliza `BatchProcessingResult` y `AuditToolset`; desde la FASE 6
+la UI lo presenta mediante `ui/audit_panel.py`.
+
+La skill `transaction-auditor` y `normalization-rules` pertenecen al flujo de
+`transaction_reviewer`; `regression-validator` pertenece a
+`quality_guardian`. El runtime Python usa funciones y modelos del proyecto,
+pero las Agent Skills no se convierten automáticamente en herramientas de
+Streamlit.
+
+La ruta local es determinista. La ruta de proveedor OpenAI es opcional, exige
+activación explícita y no fue probada con credenciales ni red.

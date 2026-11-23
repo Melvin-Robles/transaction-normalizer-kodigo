@@ -44,6 +44,39 @@ app.py ──> filters.py ──> resultados normalizados
                      └── exports.py
 ```
 
+## Arquitectura consolidada después de las fases 3–6
+
+La refactorización se mantuvo como base del sistema agéntico. Las skills y los
+agentes inspeccionan o explican resultados, pero no sustituyen al servicio
+determinista ni a las validaciones financieras.
+
+```mermaid
+flowchart TD
+    UI[app.py / Streamlit] --> SERVICE[TransactionProcessingService]
+    SERVICE --> INGEST[ingest.py]
+    SERVICE --> REGISTRY[SourceRegistry]
+    REGISTRY --> A[SourceAAdapter]
+    REGISTRY --> B[SourceBAdapter]
+    REGISTRY --> C[SourceCAdapter]
+    SERVICE --> METRICS[metrics.py]
+    UI --> FILTERS[filters.py]
+    UI --> EXPORTS[exports.py]
+    UI --> PANEL[ui/audit_panel.py]
+    PANEL --> TOOLS[AuditToolset]
+    PANEL --> AGENT[AuditAgent]
+    AGENT --> PROVIDER[Proveedor opcional]
+    TOOLS --> RESULT[BatchProcessingResult]
+    CODEX[Agentes Codex] --> SKILLS[Agent Skills locales]
+    SKILLS --> SERVICE
+```
+
+La separación es deliberada: `TransactionProcessingService` procesa bytes o
+registros sin depender de Streamlit; `AuditToolset` calcula únicamente salidas
+agregadas de un resultado ya procesado; `AuditAgent` interpreta consultas con
+un límite de iteraciones; y los agentes Codex coordinan revisiones del
+repositorio. Ninguna de esas capas modifica transacciones o reglas
+automáticamente.
+
 ### Módulos añadidos
 
 - `models.py` ahora contiene `NormalizedTransaction`, `Diagnostic` y
@@ -58,6 +91,10 @@ app.py ──> filters.py ──> resultados normalizados
 - `service.py` coordina ingestión, normalización y métricas sin importar
   Streamlit.
 - `filters.py` contiene el filtrado y ordenamiento como función pura.
+- `agent/` contiene `AuditAgent`, herramientas de solo lectura, prompts y el
+  proveedor opcional desacoplado.
+- `ui/` contiene el panel de auditoría y el estado de sesión asociado a la
+  huella del lote, sin mover lógica financiera a Streamlit.
 
 ### Compatibilidad mantenida
 
@@ -119,7 +156,7 @@ selección de datos, mensajes y representación visual.
 Esto permite probar la intersección de estado, moneda, fuente, fechas e ID sin
 simular widgets de Streamlit.
 
-## Evidencia de validación
+## Evidencia de validación de la FASE 2
 
 Se ejecutaron:
 
@@ -152,6 +189,24 @@ USD 201.00
 EUR 99.99
 ```
 
+## Validación consolidada hasta la FASE 6
+
+La evidencia posterior se mantiene separada de la caracterización de la FASE 2:
+
+- FASE 3: 17 pruebas de skills, frontmatter, scripts y recursos.
+- FASE 5: 29 pruebas del agente Python, proveedores y herramientas agregadas.
+- FASE 6: 34 pruebas, incluyendo `AppTest`, consulta local, estado de sesión,
+  disponibilidad del proveedor y carga del lote mixto.
+- FASE 7: 36 pruebas, con cobertura adicional de carga mixta y consulta
+  personalizada de importes por moneda.
+- El ejemplo integrado conserva 3 procesados, 3 válidos, 0 inválidos, USD
+  201.00 y EUR 99.99.
+- El lote mixto conserva 9 procesados, 3 válidos y 6 inválidos.
+- `compileall` y `regression-validator` pasan sin llamadas externas.
+
+Los detalles y limitaciones están en `docs/skill-validation.md`,
+`docs/agent-execution-evidence.md` y `docs/streamlit-integration.md`.
+
 ## Riesgos pendientes
 
 - Los adaptadores A/B/C son actualmente especializaciones del flujo común y
@@ -162,13 +217,19 @@ EUR 99.99
   una fase posterior, pero hacerlo ahora ampliaría el riesgo del contrato.
 - La UI aún contiene detalles de presentación que podrían extraerse más
   adelante, pero ya no ejecuta ingestión, normalización ni filtrado de datos.
-- No se han añadido skills, agentes ni LLM por instrucción de esta fase.
+- El proveedor OpenAI opcional no se ha probado con credenciales ni red; solo
+  se ha validado su contrato con un cliente falso y el bloqueo sin configuración.
+- La selección de herramientas del runtime es determinista por palabras clave;
+  no es un planificador autónomo de LLM.
 - La verificación visual manual de Streamlit sigue siendo necesaria después de
-  cada cambio importante de interfaz.
+  cada cambio importante de interfaz; `AppTest` no sustituye una inspección
+  visual del navegador.
 
-## Criterio para la siguiente fase
+## Continuidad arquitectónica
 
-Antes de añadir Agent Skills se debe mantener esta separación: una skill podrá
-inspeccionar, explicar o verificar resultados, pero las decisiones de validez,
-precisión monetaria, fechas, duplicados y exportación continuarán siendo
+Las skills, agentes Codex y el runtime Python deben mantenerse como capas de
+inspección y explicación. No deben reemplazar las validaciones deterministas,
+ejecutar instrucciones contenidas en transacciones, ni convertir
+recomendaciones en cambios de negocio sin revisión humana. Las decisiones de
+validez, precisión monetaria, fechas, duplicados y exportación continúan siendo
 deterministas y verificables mediante pruebas.

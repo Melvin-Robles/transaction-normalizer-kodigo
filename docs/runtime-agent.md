@@ -175,8 +175,11 @@ Las pruebas están en `tests/test_runtime_agent.py` y cubren:
 - ausencia de registros originales en el contexto;
 - no modificación del lote y fixture original.
 
-La validación real de esta fase ejecutó 29 pruebas, incluyendo las 20 pruebas
-existentes antes del agente.
+La validación específica de la FASE 5 ejecutó 29 pruebas, incluyendo las 20
+pruebas existentes antes del agente. La integración posterior con Streamlit se
+validó en la FASE 6 con AppTest y la suite consolidada alcanzó 34 pruebas; en
+la FASE 7 se amplió a 36 con cobertura adicional del lote mixto y consultas de
+moneda.
 
 ## Integración con la interfaz
 

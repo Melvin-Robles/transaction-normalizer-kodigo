@@ -123,5 +123,9 @@ que Codex haya activado un agente personalizado en una sesión concreta.
 `src/transaction_normalizer/agent/` contiene un runtime agéntico de la
 aplicación, distinto de los agentes Codex. Usa herramientas agregadas de solo
 lectura sobre `BatchProcessingResult`, limita iteraciones y deja el proveedor
-generativo deshabilitado por defecto. No debe conectarse a Streamlit ni enviar
-datos externos hasta una fase posterior con aprobación y pruebas específicas.
+generativo deshabilitado por defecto. La FASE 6 lo presenta en Streamlit a
+través de `ui/audit_panel.py`: el modo local no requiere red y el modo IA solo
+se habilita con configuración, activación y confirmación explícitas. La UI no
+envía el JSON original completo y reinicia el contexto cuando cambia el lote.
+La arquitectura y sus límites están documentados en
+`docs/runtime-agent.md` y `docs/streamlit-integration.md`.

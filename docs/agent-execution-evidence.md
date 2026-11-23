@@ -90,6 +90,24 @@ También se ejecutaron pruebas directas del runtime Python:
 
 No se realizaron llamadas reales a OpenAI ni a ningún servicio externo.
 
+## Comprobaciones de la integración Streamlit en FASE 6 y FASE 7
+
+La integración fue implementada en el commit `4563960`. Las comprobaciones
+automatizadas con `streamlit.testing.v1.AppTest` confirmaron:
+
+- arranque del ejemplo sin proveedor;
+- auditoría local determinista;
+- consulta personalizada de importes por moneda;
+- carga del lote mixto con 9 procesados, 3 válidos y 6 inválidos;
+- estado vacío al seleccionar carga sin archivo;
+- reinicio de estado cuando cambia la huella del lote;
+- disponibilidad del proveedor sin exponer secretos.
+
+La suite consolidada de la FASE 7 ejecutó 36 pruebas, además de
+`compileall` y `regression-validator`. Streamlit se arrancó localmente y
+respondió HTTP 200; esa comprobación no se presenta como inspección visual.
+No se realizaron llamadas reales al proveedor LLM.
+
 ## Skills utilizadas en FASE 5
 
 - `transaction-auditor`: contrato y reportes agregados de calidad.
@@ -106,6 +124,5 @@ resultados mediante `BatchProcessingResult`.
 - La validación de custom agents TOML no equivale a activación automática de un
   nombre de agente en el cliente.
 - El proveedor real OpenAI no se probó con red ni credenciales.
-- El runtime Python todavía no está conectado a Streamlit; esa integración se
-  reserva para la FASE 6.
+- La UI no persiste lotes ni conversaciones fuera de la sesión.
 - Las respuestas del runtime sin proveedor son deterministas, no generativas.

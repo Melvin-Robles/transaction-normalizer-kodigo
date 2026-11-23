@@ -35,6 +35,34 @@ class StreamlitIntegrationTests(unittest.TestCase):
         self.assertIn("3 procesado(s)", rendered)
         self.assertNotIn("tx_001", rendered)
 
+    def test_custom_currency_query_uses_real_agent_tools(self) -> None:
+        app = AppTest.from_file(str(ROOT / "app.py")).run(timeout=30)
+        app.text_input(key="audit_custom_query").set_value(
+            "¿Cuáles son los importes por moneda?"
+        ).run(timeout=30)
+        app.button(key="run_local_audit").click().run(timeout=30)
+
+        self.assertEqual(len(app.exception), 0)
+        rendered = " ".join(item.value for item in app.text)
+        self.assertIn("EUR", rendered)
+        self.assertIn("99.99", rendered)
+        self.assertIn("201.00", rendered)
+
+    def test_mixed_batch_upload_renders_current_metrics(self) -> None:
+        app = AppTest.from_file(str(ROOT / "app.py")).run(timeout=30)
+        app.button(key="use_upload_button").click().run(timeout=30)
+        app.file_uploader[0].upload(
+            "transacciones_mixtas.json",
+            (ROOT / "data" / "pruebas_ui" / "transacciones_mixtas.json").read_bytes(),
+            "application/json",
+        ).run(timeout=30)
+
+        self.assertEqual(len(app.exception), 0)
+        metric_values = {(item.label, item.value) for item in app.metric}
+        self.assertIn(("Procesadas", "9"), metric_values)
+        self.assertIn(("Inválidas", "6"), metric_values)
+        self.assertIn(("Calidad", "33.33%"), metric_values)
+
     def test_upload_mode_without_file_shows_empty_audit_state(self) -> None:
         app = AppTest.from_file(str(ROOT / "app.py")).run(timeout=30)
         app.button(key="use_upload_button").click().run(timeout=30)
