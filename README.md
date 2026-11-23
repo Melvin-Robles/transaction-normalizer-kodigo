@@ -238,8 +238,4 @@ En `data/pruebas_ui/` se incluyen:
   consciente de IA y supervisión humana.
 - [`docs/rubric-evidence.md`](docs/rubric-evidence.md): matriz académica.
 
-## Control de versiones
 
-El proyecto se trabaja en `main`. Los commits de las fases se conservan y no
-se realiza `push` automáticamente. `NOTA_TECNICA.docx` se preserva sin
-modificar y no forma parte del control de versiones.
