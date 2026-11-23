@@ -118,7 +118,8 @@ dependencias del proyecto.
 
 - Las skills son locales al repositorio y no se han instalado como skills
   globales del usuario.
-- No existen agentes especializados ni integración LLM todavía.
+- La FASE 5 añadió un agente Python de auditoría, pero no lo conecta todavía a
+  Streamlit ni activa un proveedor LLM por defecto.
 - La auditoría no determina causas empresariales; solo resume diagnósticos del
   normalizador.
 - La revisión de reglas no aplica recomendaciones automáticamente.

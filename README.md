@@ -127,3 +127,23 @@ La arquitectura y la evidencia de validación están documentadas en
 los TOML no implica por sí sola que un cliente haya activado un agente
 personalizado en una sesión concreta.
 
+## Agente Python de auditoría
+
+La FASE 5 añade un runtime agéntico desacoplado en
+`src/transaction_normalizer/agent/`. Por defecto funciona de forma
+determinista sobre métricas agregadas y no requiere credenciales:
+
+```python
+from transaction_normalizer.agent import AuditAgent
+
+response = AuditAgent(batch, rules).audit("¿Cuál es la calidad y los errores del lote?")
+print(response.to_dict())
+```
+
+Incluye herramientas para métricas, errores, fuentes, monedas y reglas. El
+proveedor OpenAI es opcional, usa Responses API, requiere `openai`,
+`OPENAI_API_KEY` y `OPENAI_AUDIT_AGENT_MODEL`, y no se activa automáticamente.
+No se realizaron llamadas externas durante las pruebas. Consulta
+[`docs/runtime-agent.md`](docs/runtime-agent.md) y
+[`docs/agent-execution-evidence.md`](docs/agent-execution-evidence.md).
+

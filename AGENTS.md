@@ -117,3 +117,11 @@ La revisión humana es obligatoria antes de modificar transacciones, cambiar
 reglas financieras, aceptar recomendaciones como hechos, aplicar correcciones
 de código o publicar resultados. La existencia y sintaxis de los TOML no prueba
 que Codex haya activado un agente personalizado en una sesión concreta.
+
+## Agente Python de auditoría
+
+`src/transaction_normalizer/agent/` contiene un runtime agéntico de la
+aplicación, distinto de los agentes Codex. Usa herramientas agregadas de solo
+lectura sobre `BatchProcessingResult`, limita iteraciones y deja el proveedor
+generativo deshabilitado por defecto. No debe conectarse a Streamlit ni enviar
+datos externos hasta una fase posterior con aprobación y pruebas específicas.
