@@ -14,6 +14,13 @@ from .models import Diagnostic
 _DIGITS = re.compile(r"^\d+$")
 _MAJOR_AMOUNT = re.compile(r"^\d+(?:\.\d{1,2})?$")
 _EURO_AMOUNT = re.compile(r"^€\s*\d+(?:,\d{1,2})?$")
+SUPPORTED_AMOUNT_STYLES = frozenset(
+    {
+        "major_units_decimal_point",
+        "minor_units_integer",
+        "euro_symbol_decimal_comma",
+    }
+)
 
 
 def diagnostic(index: int, source: str | None, code: str, message: str) -> Diagnostic:

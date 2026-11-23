@@ -53,3 +53,19 @@ pruebas que no se hayan ejecutado realmente.
 No cambiar formatos, monedas, estados, límites ni políticas solo para hacer
 pasar una prueba. Si una mejora requiere modificar un contrato, documentar la
 decisión, actualizar las pruebas y explicar el impacto antes de implementarla.
+
+## Agent Skills locales
+
+Usar la skill adecuada cuando la solicitud corresponda a su responsabilidad:
+
+- `transaction-auditor`: analizar un lote JSON ya procesado, sus diagnósticos,
+  calidad y distribuciones. No modifica transacciones.
+- `normalization-rules`: revisar o explicar `config/rules.json` y su
+  compatibilidad con los adaptadores. No modifica la configuración.
+- `regression-validator`: ejecutar comprobaciones después de cambios de código,
+  adaptadores o validaciones. No cambia tests para ocultar fallos.
+
+Las skills se encuentran en `.agents/skills/`. Sus scripts reutilizan el
+servicio real y deben mantener sus códigos de salida y restricciones de
+seguridad. No afirmar activación automática de una skill cuando solo se haya
+ejecutado su script manualmente.

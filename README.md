@@ -67,9 +67,37 @@ El archivo `data/transacciones_ejemplo.json` es el ejemplo integrado que la apli
 - `app.py`: interfaz Streamlit y flujo de interacción.
 - `src/transaction_normalizer/config.py`: carga y validación de configuración.
 - `src/transaction_normalizer/ingest.py`: lectura segura y límites de entrada.
-- `src/transaction_normalizer/normalizer.py`: detección de fuente y normalización con `Decimal`.
+- `src/transaction_normalizer/service.py`: coordinación de ingestión, normalización y métricas sin depender de Streamlit.
+- `src/transaction_normalizer/normalizer.py`: API de compatibilidad para normalización con `Decimal`.
+- `src/transaction_normalizer/sources/`: adaptadores A/B/C y registro de fuentes.
+- `src/transaction_normalizer/validation.py`: validaciones compartidas.
+- `src/transaction_normalizer/filters.py`: filtros reutilizables sobre resultados válidos.
 - `src/transaction_normalizer/metrics.py`: métricas y sumas separadas por moneda.
 - `src/transaction_normalizer/exports.py`: descargas JSON seguras.
 - `config/rules.json`: fuente de verdad de formatos, monedas, estados y límites.
 - `data/`: ejemplo integrado y archivos de demostración para la interfaz.
+
+## Agent Skills personalizadas
+
+Las skills locales viven en `.agents/skills/` y no incorporan proveedores LLM ni
+modifican automáticamente datos o configuración.
+
+- `transaction-auditor`: genera auditorías JSON de lotes, con calidad, errores,
+  distribución por fuente/moneda y recomendaciones fundamentadas en conteos.
+- `normalization-rules`: revisa `config/rules.json`, sus límites y la
+  compatibilidad con el registro real de adaptadores, sin editarlo.
+- `regression-validator`: ejecuta `unittest`, compilación y el ejemplo
+  integrado con subprocesses controlados y timeout.
+
+Ejemplos:
+
+```powershell
+python .agents/skills/transaction-auditor/scripts/audit_batch.py data/transacciones_ejemplo.json
+python .agents/skills/normalization-rules/scripts/validate_rules.py
+python .agents/skills/regression-validator/scripts/run_regression.py
+```
+
+Cada skill contiene un `SKILL.md`, scripts ejecutables y referencias enfocadas.
+La evidencia de validación se mantiene en
+[`docs/skill-validation.md`](docs/skill-validation.md).
 
