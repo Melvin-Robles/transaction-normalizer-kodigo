@@ -101,3 +101,29 @@ Cada skill contiene un `SKILL.md`, scripts ejecutables y referencias enfocadas.
 La evidencia de validación se mantiene en
 [`docs/skill-validation.md`](docs/skill-validation.md).
 
+## Agentes personalizados de Codex
+
+La personalización de agentes está definida únicamente para este repositorio:
+
+- `.codex/config.toml`: habilita subagentes y limita la concurrencia a dos.
+- `.codex/agents/transaction_reviewer.toml`: audita lotes y reglas usando
+  `transaction-auditor` y `normalization-rules`.
+- `.codex/agents/quality_guardian.toml`: revisa regresiones usando
+  `regression-validator`.
+
+Los agentes heredan el modelo, permisos, proveedor y MCP de la sesión principal.
+No se fijan modelos específicos ni se modifica la configuración global del
+usuario. Para usarlos desde un cliente Codex que haya cargado el proyecto,
+solicita explícitamente una delegación:
+
+```text
+Usa transaction_reviewer para auditar data/pruebas_ui/transacciones_mixtas.json
+y quality_guardian para ejecutar las regresiones. Espera ambos resultados y
+consolida los hallazgos, separando las acciones que requieren aprobación humana.
+```
+
+La arquitectura y la evidencia de validación están documentadas en
+[`docs/agent-personalization.md`](docs/agent-personalization.md). La sintaxis de
+los TOML no implica por sí sola que un cliente haya activado un agente
+personalizado en una sesión concreta.
+

@@ -69,3 +69,51 @@ Las skills se encuentran en `.agents/skills/`. Sus scripts reutilizan el
 servicio real y deben mantener sus códigos de salida y restricciones de
 seguridad. No afirmar activación automática de una skill cuando solo se haya
 ejecutado su script manualmente.
+
+## Agentes personalizados del proyecto
+
+La configuración local de Codex se encuentra en `.codex/` y no modifica la
+configuración global del usuario:
+
+- `transaction_reviewer`: auditor técnico de lotes y configuración. Usa
+  `transaction-auditor` para datos y `normalization-rules` para reglas.
+- `quality_guardian`: revisor de pruebas y contratos. Usa
+  `regression-validator` después de cambios de código.
+
+La concurrencia del proyecto está limitada a dos subagentes en
+`.codex/config.toml`. Los agentes heredan permisos, modelo, proveedor y MCP de
+la sesión principal; sus instrucciones de revisión no crean un sandbox nuevo.
+
+### Cuándo delegar
+
+- Delegar una auditoría de lote a `transaction_reviewer` cuando se necesiten
+  métricas, códigos de error o explicación de calidad.
+- Delegar una revisión de `rules.json` al mismo agente cuando se necesite
+  verificar fuentes, formatos, mapas o límites.
+- Delegar verificación de una modificación a `quality_guardian` cuando cambien
+  adaptadores, validaciones, servicio, exportaciones o pruebas.
+- Usar ambos en paralelo para una revisión completa: el primero analiza datos y
+  configuración; el segundo comprueba regresiones del código.
+
+### Flujo de coordinación
+
+```text
+Solicitud de auditoría
+        |
+        v
+Coordinador Codex
+        +--> transaction_reviewer
+        |       +--> transaction-auditor
+        |       +--> normalization-rules
+        |
+        +--> quality_guardian
+                +--> regression-validator
+        |
+        v
+Consolidación y revisión humana
+```
+
+La revisión humana es obligatoria antes de modificar transacciones, cambiar
+reglas financieras, aceptar recomendaciones como hechos, aplicar correcciones
+de código o publicar resultados. La existencia y sintaxis de los TOML no prueba
+que Codex haya activado un agente personalizado en una sesión concreta.
