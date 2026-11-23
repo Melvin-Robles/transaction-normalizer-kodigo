@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from datetime import date
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -14,6 +15,7 @@ from transaction_normalizer.exports import serialize_errors_json, serialize_norm
 from transaction_normalizer.filters import filter_valid_records
 from transaction_normalizer.models import ConfigurationError, DocumentError
 from transaction_normalizer.service import TransactionProcessingService
+from transaction_normalizer.ui.audit_panel import render_audit_panel
 
 
 ROOT = Path(__file__).resolve().parent
@@ -43,6 +45,7 @@ def main() -> None:
 
     payload, label = _show_data_source()
     if payload is None:
+        render_audit_panel(None, rules)
         return
 
     try:
@@ -57,7 +60,12 @@ def main() -> None:
 
     _show_batch_summary(batch.metrics, label)
     _show_input_preview(payload, label, batch.records)
-    _show_results(batch.result.valid, batch.result.invalid)
+    results_tab, audit_tab = st.tabs(["Resultados", "Auditoría inteligente"])
+    with results_tab:
+        _show_results(batch.result.valid, batch.result.invalid)
+    with audit_tab:
+        batch_key = hashlib.sha256(payload).hexdigest()
+        render_audit_panel(batch, rules, batch_key)
 
 
 def _show_header() -> None:

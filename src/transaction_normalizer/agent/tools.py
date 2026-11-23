@@ -233,6 +233,12 @@ def select_tools(query: str) -> list[str]:
             "query_currency_totals",
             "query_normalization_rules",
         ]
+    if any(keyword in normalized for keyword in ("recomendación", "recomendaciones", "recomendar")):
+        return [
+            "query_batch_metrics",
+            "query_error_distribution",
+            "query_source_statistics",
+        ]
     selected = [name for name, keywords in _QUERY_TOOL_KEYWORDS if any(keyword in normalized for keyword in keywords)]
     if not selected:
         raise UnknownToolError("No se pudo asociar la consulta a una herramienta segura.")

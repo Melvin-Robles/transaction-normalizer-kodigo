@@ -147,3 +147,30 @@ No se realizaron llamadas externas durante las pruebas. Consulta
 [`docs/runtime-agent.md`](docs/runtime-agent.md) y
 [`docs/agent-execution-evidence.md`](docs/agent-execution-evidence.md).
 
+### Auditoría inteligente en Streamlit
+
+La interfaz ahora incluye la pestaña **Auditoría inteligente**, que trabaja
+con el lote procesado actualmente y conserva los resultados, filtros y
+exportaciones originales. Muestra calidad, errores por código, estadísticas
+por fuente y totales separados por moneda.
+
+El modo **Auditoría local basada en reglas** está disponible sin API externa y
+usa `AuditToolset` y `AuditAgent` de forma determinista. Ejemplos de consultas:
+
+```text
+¿Cuál es la calidad general del lote?
+¿Cuáles son los errores más frecuentes?
+¿Qué fuentes presentan más problemas?
+¿Cuáles son los importes por moneda?
+```
+
+El modo opcional **Auditoría asistida por IA** requiere instalar `openai` y
+configurar `OPENAI_API_KEY` y `OPENAI_AUDIT_AGENT_MODEL`. Debe habilitarse
+explícitamente en la interfaz y confirmar la vista previa de datos agregados.
+No se envía automáticamente el JSON completo y no se muestran claves en la
+aplicación. Si el proveedor no está disponible, la auditoría local continúa
+funcionando.
+
+La arquitectura y las decisiones de estado, privacidad y pruebas están en
+[`docs/streamlit-integration.md`](streamlit-integration.md).
+

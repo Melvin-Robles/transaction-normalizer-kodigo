@@ -73,6 +73,10 @@ class RuntimeAgentTests(unittest.TestCase):
     def test_tool_selection_and_argument_validation_are_closed(self) -> None:
         self.assertEqual(select_tools("¿Cuál es la calidad del lote?"), ["query_batch_metrics"])
         self.assertEqual(len(select_tools("realiza una auditoría completa")), 5)
+        self.assertEqual(
+            select_tools("¿Qué recomendaciones de calidad puedes ofrecer?"),
+            ["query_batch_metrics", "query_error_distribution", "query_source_statistics"],
+        )
         with self.assertRaises(UnknownToolError):
             AuditToolset(self.batch, self.rules).invoke("run_shell")
         with self.assertRaises(ToolArgumentError):

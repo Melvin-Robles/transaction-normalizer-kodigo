@@ -9,7 +9,10 @@ deterministas. El agente no reemplaza al normalizador: recibe un
 `BatchProcessingResult`, consulta herramientas agregadas y produce una
 explicación basada en los resultados calculados por el sistema.
 
-La integración con Streamlit queda fuera de esta fase, tal como se solicitó.
+La integración con Streamlit se realiza en la FASE 6 mediante un panel de solo
+lectura. La UI conserva la ruta determinista y solo crea el proveedor opcional
+después de una activación y confirmación explícitas. El detalle de esa capa se
+documenta en [`docs/streamlit-integration.md`](streamlit-integration.md).
 
 ## Arquitectura
 
@@ -175,6 +178,18 @@ Las pruebas están en `tests/test_runtime_agent.py` y cubren:
 La validación real de esta fase ejecutó 29 pruebas, incluyendo las 20 pruebas
 existentes antes del agente.
 
+## Integración con la interfaz
+
+`app.py` sigue coordinando la carga y el servicio de procesamiento, pero delega
+la presentación de auditoría a `ui/audit_panel.py`. El panel usa `AuditToolset`
+para métricas agregadas y `AuditAgent` para preguntas. `ui/audit_state.py`
+reinicia respuestas cuando cambia la huella del payload, evitando mezclar lotes
+en una sesión.
+
+La vista de contexto para IA contiene exclusivamente salidas de herramientas:
+conteos, códigos, estadísticas por fuente, totales por moneda y reglas seguras.
+No incluye registros originales completos.
+
 ## Limitaciones
 
 - La selección de herramientas es determinista por palabras clave; no es un
@@ -182,5 +197,5 @@ existentes antes del agente.
 - No se hicieron llamadas externas ni se validó una respuesta de un modelo real.
 - El proveedor opcional depende de que el usuario instale `openai`, configure
   credenciales y elija un modelo disponible.
-- La interfaz Streamlit aún no expone el agente; corresponde a la FASE 6.
+- La interfaz no persiste conversaciones ni lotes fuera de la sesión.
 - El agente no determina causas empresariales ni corrige datos.
