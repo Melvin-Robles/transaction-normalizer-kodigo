@@ -11,10 +11,9 @@ import streamlit as st
 
 from transaction_normalizer.config import load_rules
 from transaction_normalizer.exports import serialize_errors_json, serialize_normalized_json
-from transaction_normalizer.ingest import parse_json_document
-from transaction_normalizer.metrics import calculate_metrics
+from transaction_normalizer.filters import filter_valid_records
 from transaction_normalizer.models import ConfigurationError, DocumentError
-from transaction_normalizer.normalizer import normalize_records
+from transaction_normalizer.service import TransactionProcessingService
 
 
 ROOT = Path(__file__).resolve().parent
@@ -40,13 +39,14 @@ def main() -> None:
         st.info("Corrija config/rules.json y vuelva a cargar la página.")
         return
 
+    service = TransactionProcessingService(rules)
+
     payload, label = _show_data_source()
     if payload is None:
         return
 
     try:
-        records = parse_json_document(payload, rules)
-        result = normalize_records(records, rules)
+        batch = service.process_document(payload)
     except DocumentError as exc:
         st.error(f"No se pudo procesar {label}: {exc}")
         st.info("Puede seleccionar otro archivo desde el panel de datos sin reiniciar la aplicación.")
@@ -55,10 +55,9 @@ def main() -> None:
         st.error(f"No se pudo procesar {label} por un error interno controlado.")
         return
 
-    metrics = calculate_metrics(result.valid, result.invalid, total_processed=len(records))
-    _show_batch_summary(metrics, label)
-    _show_input_preview(payload, label, records)
-    _show_results(result.valid, result.invalid)
+    _show_batch_summary(batch.metrics, label)
+    _show_input_preview(payload, label, batch.records)
+    _show_results(batch.result.valid, batch.result.invalid)
 
 
 def _show_header() -> None:
@@ -245,31 +244,17 @@ def _show_valid_filters(valid: list[dict[str, Any]]) -> list[dict[str, Any]]:
         sort_by = st.selectbox("Ordenar por", ["Fecha", "Importe", "ID"])
         descending = st.checkbox("Más recientes / mayores primero")
 
-    filtered: list[dict[str, Any]] = []
-    for row in valid:
-        row_date = date.fromisoformat(row["timestamp"][:10])
-        if state != "Todos" and row["status"] != state:
-            continue
-        if currency != "Todas" and row["currency"] != currency:
-            continue
-        if source != "Todas" and row["source"] != source:
-            continue
-        if query and query not in row["id"].casefold():
-            continue
-        if isinstance(dates, tuple) and len(dates) == 2:
-            if row_date < dates[0] or row_date > dates[1]:
-                continue
-        elif isinstance(dates, date) and row_date != dates:
-            continue
-        filtered.append(row)
-
-    sort_key = {
-        "Fecha": lambda row: row["timestamp"],
-        "Importe": lambda row: row["amount"],
-        "ID": lambda row: row["id"].casefold(),
-    }[sort_by]
-    filtered.sort(key=sort_key, reverse=descending)
-    return filtered
+    date_range = dates if isinstance(dates, (date, tuple)) else None
+    return filter_valid_records(
+        valid,
+        state=None if state == "Todos" else state,
+        currency=None if currency == "Todas" else currency,
+        source=None if source == "Todas" else source,
+        query=query,
+        date_range=date_range,
+        sort_by=sort_by,
+        descending=descending,
+    )
 
 
 def _show_results(valid: list[dict[str, Any]], invalid: list[dict[str, Any]]) -> None:
